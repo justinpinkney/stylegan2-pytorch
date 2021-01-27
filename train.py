@@ -172,6 +172,12 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
 
         noise = mixing_noise(args.batch, args.latent, args.mixing, device)
         fake_img, _ = generator(noise)
+        
+        if args.tile:
+            fake_img = torch.tile(fake_img, (2, 2))
+            start_x = np.random.randint(args.size)
+            start_y = np.random.randint(args.size)
+            fake_img = fake_img[:, :, start_x:start_x+args.size, start_y:start_y+args.size]
 
         if args.augment:
             real_img_aug, _ = augment(real_img, ada_aug_p)
@@ -179,7 +185,7 @@ def train(args, loader, generator, discriminator, g_optim, d_optim, g_ema, devic
 
         else:
             real_img_aug = real_img
-
+        
         fake_pred = discriminator(fake_img)
         real_pred = discriminator(real_img_aug)
         d_loss = d_logistic_loss(real_pred, fake_pred)
@@ -416,6 +422,9 @@ if __name__ == "__main__":
         type=int,
         default=256,
         help="probability update interval of the adaptive augmentation",
+    )
+    parser.add_argument(
+        "--tile", action="store_true", help="apply tiling and cropping"
     )
 
     args = parser.parse_args()
